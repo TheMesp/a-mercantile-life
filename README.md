@@ -1,2 +1,3 @@
 # a-mercantile-life
-Award-winning HIST3138 project simulating a merchant in medieval Italy.
+A History project for university simulating a merchant in medieval Italy.
+Winner of the Interdisciplinary Approaches to History Prize during the 2019-2020 academic year.
