@@ -1,0 +1,161 @@
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+HOW TO READ THIS FILE:
+Each event starts and ends with START and END.
+The rough formatting is as follows (START and END
+placed in brackets to avoid the program accidentally
+reading this)
+(the START word)
+Event Type
+Event Title
+Event Description (can be multiple lines)
+(The following fields are optional and can be omitted)
+-Decision Title	
+	#This decision will only be visible if this condition is true (there can be several of these)
+	>Future Events Created by this decision>Months until the future event occurs
+		(the future events can be seperated with the & symbol: in this case,
+		the program will randomly choose one of the events listed.)
+	Variables that are modified by this decision
+-(additional decisions if required)
+(the END word)
+
+If an event has no decisions or no visible decisions, then the code will generate a generic
+decision that will show as "1: Continue..." that has no effect. Essentially, the event is
+just informative and has no immediate effect.
+
+Only events with the type RandomEvent can be chosen randomly. All other events are generated
+either directly in the code or are events that spawn from decisions. I try to keep child events nearby
+their parent RandomEvent that can create them, if that makes sense.
+CITY REFERENCE:
+Cities are represented in the game CODE by a number (in gameplay, this is translated to the actual name).
+The following number mapping is used:
+0: Pisa
+1: Genoa
+2: Ferarra
+3: Kaffa
+4: Naples
+5: Barcelona
+6: Lubeck
+
+VARIABLE GLOSSARY:
+Plan	Special variable that decides whether to open the planning screen. Only used in YearlyEvents.
+Cash	Amount of immediate cash.
+IndCash	Amount of indirect cash via Bills of Exchange or other means.
+City	A number representing the currently inhabited city.
+SWares	Stands for "Specific Wares". After the event is calculated, the number in SWares is transferred
+	to the ware that matches your current city.
+0Wares	Current stock of wares in city 0 (Pisa). Similar for 1Wares through to 6Wares.
+RWares	Special number that either grants or removes completely random wares.
+	Adding random wares always adds the number.
+	Removing random wares will try to reach the given number (since we don't want the code to crash
+	trying to remove wares that aren't even there!)
+TWares	Stands for "Total Wares" and is only used for checks. Represents the total stock of the player's wares.
+0Rep...6Rep, SRep	Exact same concept as the "Wares" variables, but for Reputation.
+CRep	Stands for "City Reputation". Always holds the current repuation of the city, and is used for checks.
+Guelph/Ghibelline	Either 0 if not in a Guelph/Ghibelline city or 1 if in.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+These first two events are special events, created at the start of each year.
+The first event only appears once, is the first event to occur, and forces you
+to begin the planning interface. The second event that occurs every subsequent
+January gives you a choice to just immediately remain and build reputation if
+you want to save time by skipping the planning interface.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+START
+YearlyEvent
+Opening Moves
+Shortly after inheriting your fathers money and wares, you
+see it fit to use these assets to lay groundwork for a
+successful mercantile career.
+-Begin Planning!
+	Plan = 1
+END
+
+START
+YearlyEvent
+The Start of Another Year
+The sun rises on the beginning of another year. It is now
+time to plan expenditures and actions for the following year.
+-Begin Planning!
+	Plan = 1
+-Skip Planning
+	Plan = 0
+	SRep = 10
+END
+
+START
+Event
+Debug
+Something went wrong! I tried to load an event that didn't exist. This event is a special
+debug event so that the game doesn't crash and you can continue playing, but this really shouldn't be
+here. Have exactly 1 Cash as my way of saying sorry.
+-Take the free money
+	Cash + 1
+END
+START
+RandomEvent
+An Emergency Need for Wine
+You encounter a panicked man who you recognize as a council member of the city. As it turns out, he was
+hosting a party, but one of his servants accidentally left the stock of wine uncovered for days and
+spoiled it. He implores you to sell him some wine, claiming that he needs at least 50 but would prefer
+as much as 200 "units" of wine and will pay far above market price. You decide that now is not the time
+to pester him over what exactly a "unit" of wine is, and are confident that whoever needed to understand
+that terminology understood it. Helping a council member like this will surely reflect nicely on you...
+-Sell the host 50 wine for 200 cash. (+5 Rep)
+	#4Wares > 49
+	4Wares - 50
+	Cash + 200
+	SRep + 5
+-Give the host 50 wine as a gesture of goodwill. (+15 Rep)
+	#4Wares > 49
+	4Wares - 50
+	SRep + 15
+-Sell the host 100 wine for 400 cash. (+10 Rep)
+	#4Wares > 99
+	4Wares - 100
+	Cash + 400
+	SRep + 10
+-Give the host 100 wine as a gesture of goodwill. (+30 Rep)
+	#4Wares > 99
+	4Wares - 100
+	SRep + 30
+-Sell the host 200 wine for 800 cash. (+20 Rep)
+	#4Wares > 199
+	4Wares - 200
+	Cash + 800
+	SRep + 20
+-Give the host 200 wine as a gesture of goodwill. (+60 Rep)
+	#4Wares > 199
+	4Wares - 200
+	SRep + 60
+-Apologize and move on.
+END
+START
+RandomEvent
+Event A
+desc
+END
+START
+RandomEvent
+Event B
+desc
+END
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+These last two events are manually placed into the game by the code, giving you a 5 year warning to the end of the simulation
+and the final event of the simulation itself.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+START
+Event
+A Deadly Premonition
+Something feels very ominious as you stand in the market today. You feel that if you have anything left to
+do in your career, you should find time for it in the next 5 years.
+-Duly noted.
+END
+START
+Event
+Death of a Salesman
+The year is 1348, and illness beyond anything ever seen before has struck. Staying in one place seems like
+the safest bet, but as a merchant doing so is almost impossible. You look back at your accomplishments in the
+last 48 years, and reminisce on your successful career before you set sail for the last time.
+-I hope the Church was right and I can buy my way into heaven!
+END

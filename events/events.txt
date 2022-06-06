@@ -1,0 +1,973 @@
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+HOW TO READ THIS FILE:
+Each event starts and ends with START and END.
+The rough formatting is as follows (START and END
+placed in brackets to avoid the program accidentally
+reading this)
+(the START word)
+Event Type
+Event Title
+Event Description (can be multiple lines)
+(The following fields are optional and can be omitted)
+-Decision Title	
+	#This decision will only be visible if this condition is true (there can be several of these)
+	>Future Events Created by this decision>Months until the future event occurs
+		(the future events can be seperated with the & symbol: in this case,
+		the program will randomly choose one of the events listed.)
+	Variables that are modified by this decision
+-(additional decisions if required)
+(the END word)
+
+If an event has no decisions or no visible decisions, then the code will generate a generic
+decision that will show as "1: Continue..." that has no effect. Essentially, the event is
+just informative and has no immediate effect.
+
+Only events with the type RandomEvent can be chosen randomly. All other events are generated
+either directly in the code or are events that spawn from decisions. I try to keep child events nearby
+their parent RandomEvent that can create them, if that makes sense.
+CITY REFERENCE:
+Cities are represented in the game CODE by a number (in gameplay, this is translated to the actual name).
+The following number mapping is used:
+0: Pisa
+1: Genoa
+2: Ferarra
+3: Kaffa
+4: Naples
+5: Barcelona
+6: Lubeck
+
+VARIABLE GLOSSARY:
+Plan	Special variable that decides whether to open the planning screen. Only used in YearlyEvents.
+Cash	Amount of immediate cash.
+IndCash	Amount of indirect cash via Bills of Exchange or other means.
+City	A number representing the currently inhabited city.
+SWares	Stands for "Specific Wares". After the event is calculated, the number in SWares is transferred
+	to the ware that matches your current city.
+0Wares	Current stock of wares in city 0 (Pisa). Similar for 1Wares through to 6Wares.
+RWares	Special number that either grants or removes completely random wares.
+	Adding random wares always adds the number.
+	Removing random wares will try to reach the given number (since we don't want the code to crash
+	trying to remove wares that aren't even there!)
+TWares	Stands for "Total Wares" and is only used for checks. Represents the total stock of the player's wares.
+0Rep...6Rep, SRep	Exact same concept as the "Wares" variables, but for Reputation.
+CRep	Stands for "City Reputation". Always holds the current repuation of the city, and is used for checks.
+Guelph/Ghibelline	Either 0 if not in a Guelph/Ghibelline city or 1 if in.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+These first two events are special events, created at the start of each year.
+The first event only appears once, is the first event to occur, and forces you
+to begin the planning interface. The second event that occurs every subsequent
+January gives you a choice to just immediately remain and build reputation if
+you want to save time by skipping the planning interface.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+START
+YearlyEvent
+Opening Moves
+Shortly after inheriting your fathers money and wares, you
+see it fit to use these assets to lay groundwork for a
+successful mercantile career.
+-Begin Planning!
+	Plan = 1
+END
+
+START
+YearlyEvent
+The Start of Another Year
+The sun rises on the beginning of another year. It is now
+time to plan expenditures and actions for the following year.
+-Begin Planning!
+	Plan = 1
+-Skip Planning
+	Plan = 0
+	SRep = 10
+END
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+These events are mainly to make use of the Guelph/Ghibelline situation. You can decide whether
+to pay taxes in exchange for reputation or move to a location where you will not be taxed.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+START
+RandomEvent
+Birth of a new Religious Tax
+Evidently the Pope is currently strapped for funds, as you have recieved word of a religious tax that
+will be implemented soon into the future. The tax will consist of 100 cash, or barring that, a large
+seizure of assets. You should be able to avoid the tax by moving to a non-Guelph city, but remaining in
+a Guelph city and paying the tax may also raise your reputation...
+-I am currently in a Guelph city. I should consider my options next planning session.
+	#Guelph = 1
+	>Religious Tax Collection>12
+-I am not currently in a Guelph city. I should consider my options next planning session.
+	#Guelph = 0
+	>Religious Tax Collection>12
+END
+START
+Event
+Religious Tax Collection
+The time has come for all merchants operating in Guelph cities to pay the religious tax.
+-Pay 100 cash and gain 20 Reputation
+	#Cash > 99
+	#Guelph = 1
+	Cash - 100
+	SRep = 20
+-You lack cash, so submit to a large seizure of assets...
+	#Guelph = 1
+	#Cash < 100
+	RWares = -1000
+	SRep = 20
+-Desperately attempt to smooth-talk out of the tax! (33% chance of success)
+	#Guelph = 1
+	>Smooth Operator&Well, That Didn't Work&Well, That Didn't Work>0
+-Whew, good thing I'm not currently in a Guelph city.
+	#Guelph = 0
+END
+START
+Event
+Smooth Operator
+You somehow manage to convince the Podesta that you have no obligation to pay the tax.
+You are left to continue your business, but nobody is particularly pleased with you.
+-I can't believe that worked! (-5 Reputation)
+	SRep = -5
+END
+START
+Event
+Well, That Didn't Work
+The Podesta is thoroughly unimpressed by your efforts to squeeze out of the tax. He has
+your goods seized by force, making a fool out of you in public. Repairing the loss of
+trust in this city will take a long time.
+-This really wasn't my brightest idea. (-50 Reputation, Majority of Goods lost)
+	RWares = -2000
+	SRep = -50
+END
+START
+RandomEvent
+War in the HRE
+The HRE, long angry with the Kingdom of France over control of certain contentious counties
+along their border, has begun a small skirmish to sieze control of the counties. Inevitably
+Empire-aligned cities will be expected to contribute in the near future, which will likely
+translate to a tax on merchants such as yourself. It will likely consist of either 100 cash
+or a large portion of wares if you lack enough cash.
+-I am currently in a Ghibelline city. I should consider my options next planning session.	
+	#Ghibelline = 1
+	>Contribution to the War Effort>12
+-I am not currently in a Ghibelline city. I should consider my options next planning session.
+	#Ghibelline = 0
+	>Contribution to the War Effort>12	
+END
+START
+Event
+Contribution to the War Effort
+The time has come for all merchants operating in Ghibelline cities to contribute to the ongoing conflict.
+-Pay 100 cash and gain 20 Reputation
+	#Cash > 99
+	#Ghibelline = 1
+	Cash - 100
+	SRep = 20
+-You lack cash, so submit to a large seizure of assets...
+	#Ghibelline = 1
+	#Cash < 100
+	RWares = -1000
+	SRep = 20
+-Desperately attempt to smooth-talk out of the tax! (33% chance of success)	
+	#Ghibelline = 1
+	>Smooth Operator&Well, That Didn't Work&Well, That Didn't Work>0
+-Whew, good thing I'm not currently in a Ghibelline city.
+	#Ghibelline = 0
+END
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This event chain was inspired by the tax complications in FD 27.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+START
+RandomEvent
+City Elites on the Hunt
+While setting up business for the day, you are approached by two men with a strong aura of authority.
+They explain that they represent the interests of the city and are collecting tax from any and all
+foreign merchants, and enquire about your own origins.
+-"Do you have eyes? I'm a Pisan doing business in Pisa! Go harangue someone else!"
+	#City = 0
+	>Irritated but Acknowledged>0
+-"Let's not be too hasty here. I may be foreign, but I have done plenty for this fine city already!"	
+	#City > 0
+	#CRep > 49
+	>Irritated but Acknowledged&Unimpressed Elite>0
+-Pay the tax (-50 Cash, +10 Reputation)
+	#City > 0
+	#Cash > 49
+	Cash - 50
+	SRep = 10
+-Fib and claim you aren't a merchant	
+	#City > 0
+	>Unimpressed Elite>0
+END
+START
+Event
+Irritated but Acknowledged
+The men ask for your name, then mutter amongst themselves. After a brief moment, they turn back to
+you and one says "I guess you're exempt. I've got my eye on you though..."
+-Could have gone worse. (-5 Reputation)
+	SRep = -5
+END
+START
+Event
+Unimpressed Elite
+The men are thoroughly unimpressed with your shenanigans. Once it becomes clear that you cannot pay,
+they storm off. You cannot imagine that this will reflect well on you.
+-Could have gone better. (-20 Reputation)
+	SRep = -20
+END
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+FD 38 shows how the Council will frequently hold public meetings to announce and debate new statutes
+and taxes. So, I wrote some events that let you try to influence these public meetings.
+In general, you will need a higher reputation to be able to successfully influence the events.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+START
+RandomEvent
+Public Debate on Protectionism
+There is a noticable crowd in the city today. Upon coming closer, you realize that the city council is
+holding a public debate regarding trade.
+-Listen closer...
+	#City = 1
+	>A Fruitful Debate>0
+-Listen closer...
+	#City > 1
+	>An Olively Debate>0
+-Listen closer...
+	#City < 1
+	>An Olively Debate>0
+END
+Note: I love my stupid puns.
+START
+Event
+An Olively Debate
+You enter the city square. The debate seems to be over concerns of Genovese Olive Oil undercutting
+the oil of local merchants and making the city too economically reliant on Genoa. Judging by the flow
+of the debate at the moment, it seems likely that if you do nothing, a tax on Genovese olive oil will
+occur soon in this city.
+-You see yourself as important to this citys economy. Try to convince the crowd that the tax will scare you away.
+	#CRep > 39
+	>Successful Oration>0
+-You are still a new face in this city, but attempt to convince the crowd anyways. (-5 reputation to attempt, 50% chance of success)
+	#CRep < 40	
+	>Successful Oration&The Olive Oil Tax Holds>0
+	SRep = -5
+-Stay out of the debate.
+	>The Olive Oil Tax Holds>0
+END
+This event is reused a lot, so I make it very generic.
+START
+Event
+Successful Oration
+You are able to convince the townsfolk and council of your argument, and the council acts accordingly.
+Surely you're a bit more recognizable in the city now!
+-Hurrah! (+20 Reputation)
+	SRep = 20
+END
+START
+Event
+The Olive Oil Tax Holds
+Either due to inaction or incompetence, the council ultimately decides to implement the tax on Genovese
+Olive Oil. It will be collected in a month.
+-Darn.
+	#1Wares > 0
+	>Taxing Olive the Olives>1
+-Good thing I don't have any, anyways.
+	#1Wares = 0
+END
+START
+Event
+Taxing Olive the Olives
+As a merchant who deals in Genovese Olive Oil, you are approached by the Podesta. He examines
+your stock, then assigns a tax. If you are unable to pay, the wares will be seized with a paltry
+compensation of 20 Cash.
+-Pay a tax of 50 cash.
+	#1Wares < 50
+	#Cash > 49
+	Cash - 50
+-Pay a tax of 100 cash.
+	#1Wares > 49
+	#1Wares < 100
+	#Cash > 99
+	Cash - 100
+-Pay a tax of 200 cash.
+	#1Wares > 99
+	#Cash > 199
+	Cash - 200
+-Submit to a seizure of assets.
+	1Wares = 0
+	Cash + 20
+END
+This is an alternate version of the above event chain that is identical but for Ferrarese fruit.
+It occurs if you are in Genoa (since then the argument about protectionism makes no sense)
+START
+Event
+A Fruitful Debate
+You enter the Genovese square. The debate seems to be over concerns of Ferrarese fruit undercutting
+the fruits of local merchants and making Genoa too economically reliant on Ferrara. Judging by the flow
+of the debate at the moment, it seems likely that if you do nothing, a tax on Ferrarese fruit will
+occur soon in this city.
+-You see yourself as important to Genoa's economy. Try to convince the crowd that the tax will scare you away.
+	#CRep > 39
+	>Successful Oration>0
+-You are still a new face in Genoa, but attempt to convince the crowd anyways. (-5 reputation to attempt, 50% chance of success)
+	#CRep < 40	
+	>Successful Oration&The Fruit Tax Holds>0
+	SRep = -5
+-Stay out of the debate.
+	>The Fruit Tax Holds>0
+END
+START
+Event
+The Fruit Tax Holds
+Either due to inaction or incompetence, the council ultimately decides to implement the tax on
+Ferrarese fruit. It will be collected in a month.
+-Darn.
+	#2Wares > 0
+	>The Fruit of All Evil>1
+-Good thing I don't have any, anyways.
+	#2Wares = 0
+END
+START
+Event
+The Fruit of All Evil
+As a merchant who deals in Ferrarese fruit, you are approached by the Podesta. He examines
+your stock, then assigns a tax. If you are unable to pay, the wares will be seized with a paltry
+compensation of 20 Cash.
+-Pay a tax of 50 cash.
+	#2Wares < 50
+	#Cash > 49
+	Cash - 50
+-Pay a tax of 100 cash.
+	#2Wares > 49
+	#2Wares < 100
+	#Cash > 99
+	Cash - 100
+-Pay a tax of 200 cash.
+	#2Wares > 99
+	#Cash > 199
+	Cash - 200
+-Submit to a seizure of assets.
+	2Wares = 0
+	Cash + 20
+END
+START
+RandomEvent
+A Minor Debate
+The town square appears abuzz with a public council debate. You listen in, and it is revealed that
+the subject matter is how best to spend some excess tax money, whether on city defense or on fixing
+part of a road. The subject matter given your tendency to travel is not relevant to you personally, but
+by participating in this debate you could raise your reputation in the city.
+-Participate in the debate! (50% chance of success)
+	>Successful Oration&Obtuse Oration>0
+-Stay out of it.
+END
+START
+Event
+Obtuse Oration
+Clearly you missed some of the context of this debate, as you are practically laughed off of the podium!
+Quite embarrasing, and surely poor for your public image.
+-I run away in shame! (-15 Reputation)
+	SRep = -15
+END
+START
+RandomEvent
+Fundraising Debate
+You arrive in the town square to see the council of the city holding a debate on whether to construct a
+new well. A local mason claims he will do it for 100 Cash, but the city council is hesitant to spend the
+money, and they attempt to steer the debate towards discussing a tax to fund the well. If you have the cash,
+funding the well would surely raise your reputation, or alternatively you could just participate in the
+debate to maybe get some face recognition and make some connections.
+-Donate 100 Cash to construct the well! (+40 Reputation)
+	#Cash > 99
+	Cash - 100
+	SRep = 40
+-Participate in the debate! (50% chance of success)
+	>Successful Oration&Obtuse Oration>0
+-Stay out of it.
+END
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Letters to FD 82, 111, 113, 115 deal with how war occurs and how it impacts the local cities.
+So, here are a few events that deal with that.
+Chiefly, the threat of conflict tends to make families stockpile food as it becomes harder to find
+when the conflict itself rages.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+START
+RandomEvent
+Conflict on the Horizon
+After attending the latest Council meeting, you are made privy to an upcoming conflict between two
+neighboring counts over some minor succession. Conflict breeds scarcity, so the local townsfolk is
+beginning to barricade and stockpile their own belongings. Not everyone has enough grain to weather the
+storm, so you could get away with selling your stock for even higher prices. Or, you could build connections
+by granting money to townsfolk to raise your public image. Further still, if you aren't well known in town,
+it may be wiser to focus on protecting your own assets, as you can't trust anyone to do it for you...
+-Bring to market 50 Grain for 200 cash.
+	#0Wares > 49
+	#CRep > 29
+	>Safe and Sound>2
+	0Wares - 50
+	Cash + 200
+-Grant the city 50 Cash as a gesture of goodwill. (+20 Rep)
+	#Cash > 49
+	#CRep > 29
+	>Safe and Sound>2
+	Cash - 50
+	SRep + 20
+-Bring to market 100 grain for 400 cash.
+	#0Wares > 99
+	#CRep > 29
+	>Safe and Sound>2
+	0Wares - 100
+	Cash + 400
+-Bring to market 50 Grain for 200 cash.
+	#0Wares > 49
+	#CRep < 30
+	>Sacked in the Night!>2
+	0Wares - 50
+	Cash + 200
+-Grant the city 50 Cash as a gesture of goodwill. (+20 Rep)
+	#Cash > 49
+	#CRep < 30
+	>Sacked in the Night!>2
+	Cash - 50
+	SRep + 20
+-Bring to market 100 grain for 400 cash.
+	#0Wares > 99
+	#CRep < 30
+	>Sacked in the Night!>2
+	0Wares - 100
+	Cash + 400
+-Focus on barricading your own goods.
+	>Safe and Sound>2
+END
+START
+Event
+Sacked in the Night!
+You return to your warehouse after the conflict has ended to find that a large amount of your goods
+and bills of exchange are missing.
+-Curses!
+	RWares - 600
+	IndCash - 600
+END
+START
+Event
+Safe and Sound
+You return to your warehouse after the conflict has ended to discover nothing out of the ordinary.
+Either through effective barricades or the protection of your neighbors, your stockpile has survived
+the conflict.
+-That's good.
+END
+START
+RandomEvent
+Preparing for a Siege
+It seems you have found yourself in the wrong place at most certainly the wrong time. The city is currently
+preparing for a siege due to some conflict that's beyond your understanding. The Podesta approaches you and
+demands all of your grain.
+-Hand over the grain.
+	#0Wares > 0
+	0Wares = 0
+-"I would love to comply, but I don't have any."
+	#0Wares = 0
+-Refuse. (-30 Rep)
+	SRep - 30
+END
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Peter Stufford's "Power and Profit" covers how Italian cities attempted to get notable members of the city
+to at least spend some time in a year living there on page 76. So, I wrote an event chain that encourages
+you to go back home to Pisa due to your residency there for the following year.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+START
+RandomEvent
+Summons from Pisa
+You as a prominent merchant who began his career in Pisa have an obligation to spend some time there every
+now and then to remain in the city's good graces. Or, at least, that's what this letter says from a servant
+back in Pisa. The servant seems to be really implying that you should return home for next year, perhaps he
+thinks the council of Pisa is getting antsy about people leaving their city to live in rival cities like
+Florence.
+-I'm already in Pisa! Go visit the council and imply a continued presence in Pisa.
+	#City = 0
+-I am not currently in Pisa. I should plan accordingly next chance I get to travel.
+	#City > 0
+	>A Pisan Presence>12
+END
+START
+Event
+A Pisan Presence
+A concerned councilman has come to the door of your estate in Pisa, inquiring about your presence.
+-"Hello? Yes, I still live here!" (+10 Rep)
+	#City = 0
+	SRep = 10
+-But you are nowhere to be found... (-30 Rep)
+	#City > 0
+	SRep - 30
+END
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"Power and Profit" 176 describes bridges as being instrumental to land trade and built by dedicated builders but expensive to maintain,
+so tolls were also extracted. Here's just a quick "pay the toll or fail to contribute to the bridges maitenance, lowering reputation" event.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+START
+RandomEvent
+For Whom the Bridge Tolls
+You are delivering a hotly anticipated product to a local noble, but you find that the way is blocked by a
+bridge over a river. A man stands at the bridge and asks for a toll of 30 Cash to help maintain the bridge.
+-Pay the toll
+	#Cash > 29
+	Cash - 30
+-Avoid the bridge and attempt to find a detour (50% chance of success)
+	>Banking on the Riverbank&Bridge over Troubled Waiters>0
+END
+START
+Event
+Banking on the Riverbank
+You are able to find a shallow area of the river nearby, and are able
+to make your delivery with virtually no delay.
+-"You wouldn't happen to have some dry boots, would you?" (+10 Reputation)
+	SRep + 10
+END
+START
+Event
+Bridge over Troubled Waiters
+You search for several hours for another way across the river until the sun comes down and you ultimately
+give up. The nobleman forced to wait is surely not pleased.
+-That's what I get for being in-toll-erant. (-20 Reputation)
+	SRep - 20
+END
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Inns were extremely important to merchants in medieval Italy, serving as a safe storage of goods when merchants were in locations that
+lacked locked public warehouses. In addition, they provided plenty of additional services to merchants. (Power and Profit, 203-208)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+START
+RandomEvent
+A Place to Stay
+The sun is setting, you are in the middle of a delivery, and you are nowhere nearby your usual accomodations.
+Fortunately, there is an inn nearby: you could get room and goods storage at the inn for tonight for 70 Cash,
+or alternatively camp off the beaten path and hope you remain undetected by those who work in the dark.
+-Pay for Board
+	#Cash > 69
+	Cash - 70
+-Chance the Night
+	>Uneventful Night&A Rude Awakening>0
+END
+START
+Event
+Uneventful Night
+You wake up the next morning to find everything exactly where you left it.
+-Good news.
+END
+START
+Event
+A Rude Awakening
+You wake up the next morning to find a good chunk of your goods and cash gone.
+-Darn.
+	Cash - 300
+	IndCash - 600
+	RWares - 1200
+END
+START
+RandomEvent
+Staying Inn the Know
+Inns are wonderful places for a merchant such as yourself to make connections in a town. You find yourself
+in one of the more prestigious establishments tonight, and spending some Cash at the tavern could really
+help your networking in this city.
+-Buy some drinks, strategically! (-10 Cash, +40 Reputation)
+	#Cash > 9
+	Cash - 10
+	SRep = 40
+-Simply chat amongst the crowd to make some connections (+20 Reputation)
+	SRep = 20
+END
+START
+RandomEvent
+Moneychanger at the Motel
+(And by Motel, I mean Inn. I wanted to add alliterative appeal to the title but I acknowledge that the
+synonym is poor.) While spending the evening at a local inn, you are brought into connection with a local
+moneychanger. He has some fast conversions ready for you, but he'll take a 10% cut for himself.
+-Exchange 100 Bills of Exchange into 90 Cash.
+	#IndCash > 99
+	IndCash - 100
+	Cash + 90
+-Exchange 1000 Bills of Exchange into 900 Cash.
+	#IndCash > 999
+	IndCash - 1000
+	Cash + 900
+-Exchange 10000 Bills of Exchange into 9000 Cash.
+	#IndCash > 9999
+	IndCash - 10000
+	Cash + 9000
+-Pass for now.
+END
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This event inspired by the description of proliferic bandits and armed escorts in Power and Profit, 219-221.
+Surely these fields ended up mixing.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+START
+RandomEvent
+Protection for the Road
+As you make your way outside the city boundaries for a minor delivery, a rather shady person claims that he's
+selling "protection" for the road ahead, for a cost of 100 cash. You feel like there is an implied threat in
+this offer, and that not accepting this protection could end badly.
+-Pay the protection money.
+	#Cash > 99	
+	>An Uneventful Journey>0
+	Cash - 100
+-Decline the offer, and travel the road anyways.
+	>An Uneventful Journey&A Bandit Attack>0
+-Opt to not make the delivery for your own safety. (Reputation - 10)
+	SRep - 10
+END
+START
+Event
+An Uneventful Journey
+You have a profoundly boring trip to your destination.
+-Better than being robbed.
+END
+START
+Event
+A Bandit Attack
+You are assaulted by bandits on your journey, and are defenseless as they make off with as much of your goods
+as they can carry, though they leave you unharmed. You're pretty sure that man from earlier was among them.
+-Was this really all worth it?!
+	Cash - 300
+	IndCash - 600
+	RWares - 1200
+END
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This event inspired by mentions of Free Companies (effectively bandits) razing land and
+creating disorder after the Plague struck in The Merchant of Prato by Origo, page 66. The
+Plague doesn't happen until the end of the game here, so it is considered a smaller scale
+event by an outbreak of slow fever (historic name for Typhoid fever).
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+START
+RandomEvent
+The Aftermath of Illness
+You enter the town square for the first time in a month to find a huge state of disarray.
+It seems in your absense you have avoided an outbreak of Slow Fever, but while the illness
+is gone, bands of men known as the Free Companies have used the disorder to raid and
+plunder the fields that sustain the city. There is a desperate need for grain in the city,
+and now would be an excellent time to make this city indebted to you... or a fine opportunity
+to spike your prices and exploit this desperate situation. You'll need at least 50 grain
+to make any sort of impact here.
+-Bring to market 50 Grain for 200 cash.
+	#0Wares > 49
+	0Wares - 50
+	Cash + 200
+-Grant the city 50 Grain as a gesture of goodwill. (+15 Rep)
+	#0Wares > 49
+	0Wares - 50
+	SRep + 15
+-Bring to market 100 grain for 400 cash.
+	#0Wares > 99
+	0Wares - 100
+	Cash + 400
+-Grant the city 100 grain as a gesture of goodwill. (+30 Rep)
+	#0Wares > 99
+	0Wares - 100
+	SRep + 30
+-Bring to market 200 grain for 800 cash.
+	#0Wares > 199
+	0Wares - 200
+	Cash + 800
+-Grant the city 200 grain as a gesture of goodwill. (+60 Rep)
+	#0Wares > 199
+	0Wares - 200
+	SRep + 60
+-Avert your gaze from the horror.
+END
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Merchant of Prato pg. 66 covers the immense power of guilds to the extent that they can
+order local excommunications on uncooperative traders and craftsmen. So, I wrote some events
+that have you maneuver around guilds.
+The power of the guilds dropped significantly after the black death overlal eroded authority,
+but that is before the timeframe of this game.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+START
+RandomEvent
+Supporting the Guilds
+As you approach the market square to purchase wares, you notice that an additional guild duty
+has been applied to the wares. The fare is only 50 cash, and at this point you have already
+committed to the purchase: backing out now isn't going to make this local merchant very happy.
+-Pay the duty
+	#Cash > 49
+	Cash - 50
+-Back out of the sale (-10 Reputation)
+	SRep - 10
+END
+START
+RandomEvent
+Being A Known Face isn't All Good
+During the early 14th century, the authority of local guilds in cities was at an all time high.
+To maintain power, guild leaders can even have uncooperative merchants and craftsmen locally
+excommunicated. This fact lingers in the back of your mind as you are approached by leaders of
+one of the local guilds. If you are a foreigner and have a high reputation in the city, you shouldn't
+expect this conversation to be pleasant.
+-Fortunately, I am currently in Pisa and a member of this guild.
+	#City = 0
+	>More Pressing Matters>0
+-Fortunately, I am still quite unknown in this city.
+	#City > 0
+	#CRep < 40
+	>More Pressing Matters>0
+-Unfortunately, I've made quite a name for myself here while outside of their sphere...
+	#City > 0
+	#CRep > 39
+	>Grilled by the Guild>0
+END
+START
+Event
+More Pressing Matters
+After some small talk, the guild representatives seem to lose interest. Evidently, you aren't who
+they're interested in at the moment.
+END
+START
+Event
+Grilled by the Guild
+The men make it quite clear that they are unhappy with you establishing yourself in this city and
+profiting off of it without their involvement. They demand a contribution of 200 Cash, and threaten
+to have you excommunicated should you refuse.
+-Fine.
+	#Cash > 199
+	Cash - 200
+-Refuse and suffer the consequences (-100 Reputation!!!)
+	SRep - 100
+END
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Merchant of Prato p.90-92 gives some details on buying and selling slaves.
+Below are some events based on this depiction.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+START
+RandomEvent
+Inspection of Goods
+The podesta approaches one of your cargo ships as it pulls into harbour and uses his authority
+to inspect your wares searching for any wares that a special duty is applied for.
+-He finds nothing noteworthy.
+	#3Wares = 0
+-He notices you have Slaves in the cargo hold.
+	#3Wares > 0
+	>Standard Slavery Duties>0
+END
+START
+Event
+Standard Slavery Duties
+"As you are importing slaves," the Podesta explains, "I am obligated to charge you a duty of
+100 Cash. If you are unable to pay, you will have to surrender some of your other merchandise."
+-Pay the fine
+	#Cash > 99
+	Cash - 100
+-Opt for the seizure
+	RWares - 400
+END
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+These events aren't inspired by anything in particular, and are just an exercise in
+creative writing dealing with common, timeless events such as banditry, city life,
+encounters with other merchants, etc.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+START
+RandomEvent
+A Beggar in the Streets
+While heading towards the city square, you encounter a beggar seeming
+very much down on his luck. Nobody would think twice if you ignored the
+beggar, but if the right people see you being benevolent, it would surely
+reflect well on your reputation...
+-Give 10 cash to the beggar
+	#Cash > 9
+	Cash - 10
+	SRep = 5
+-Ignore the beggar
+END
+
+START
+RandomEvent
+Commotion in Town Square
+As you make your way to town to examine wares, you hear a cry of "Thief!",
+prompting you to rush to the source of the sound. Upon arriving, you realize
+that you are too late to stop the thievery, as a man flees from the stall of a
+fellow merchant. The merchant greets you and proclaims that the loss of wares will
+set him back months as he would need to return to his warehouse in Milan and restock.
+After chatting with the man further, you realize that this man is (or at least claims
+to be) a notable merchant in this city. If he is to be believed, helping him out may be wise...
+-Gift 100 cash to the merchant
+	#Cash > 99
+	>A Grateful Merchant&A Fool and his Gold are soon parted...>1
+	Cash - 100
+-Gift assorted wares to the merchant
+	#TWares > 99
+	>A Grateful Merchant&A Fool and his Gold are soon parted...>1
+	RWares = -100
+-Loan the merchant wares to save him the trip home, and have him pay you back when he next restocks	
+	#TWares > 99
+	>A Debt Repaid&A Fool and his Gold are soon parted...>2
+	RWares = -100
+-Give nothing, apoplogize, and move on
+END
+
+START
+Event
+A Grateful Merchant
+You return to the location of the thievery that occured last month and see the merchant, having
+reopened his business and is attracting quite the crowd. You squeeze your way through the buyers,
+eventually catching the eye of the merchant. He wholeheartedly thanks you for your help, and ensures
+you that he will spread your good name among his mercantile cabal!
+-Great!
+	SRep = 30 
+END
+START
+Event
+A Debt Repaid
+You return to the location of the thievery that occured two months ago and see the merchant, having
+reopened his business and is attracting quite the crowd. You squeeze your way through the buyers,
+eventually catching the eye of the merchant. He thanks you for your assistance, and repays his debt
+in the form of valuable amber from the Hanseatic League. "I only deal in Milanese goods, so I've got
+nothing better to do with this..."
+-"I'm sure I can find a use."
+	6Wares + 50
+END
+START
+Event
+A Fool and his Gold are soon parted...
+You have walked by the location of the thievery that occured last month, but have yet to see anything
+at all. You begin to wonder if you've been tricked, somehow.
+-Darn.
+END
+START
+RandomEvent
+An Inexperienced Merchant
+You stumble upon a merchant selling wares for far below what you know they would sell for. You can buy
+50, 100 or 200 Cash's worth of random merchandise here: you know that you cannot carry any more back to
+your warehouse at the moment and with prices this low he'll have liquidated his entire stock by the time
+you return.
+-Buy 50 Random Wares
+	#Cash > 49
+	Cash - 50
+	RWares = 50
+-Buy 100 Random Wares
+	#Cash > 99
+	Cash - 100
+	RWares = 100
+-Buy 200 Random Wares
+	#Cash > 199
+	Cash - 100
+	RWares = 100
+-You give the merchant a lecturing and head off.
+END
+START
+RandomEvent
+Interrupting an Argument
+As you approach the city centre for another day of business, you come across an argument between a clearly
+foreign merchant and the local podesta, arguing over some menial imported luxury statute that you are
+nonetheless quite familiar with due to your line of work. You could twist your words to support either party
+here, or stay out of it entirely.
+-Support the foreign merchant
+	>A Foreign Friend>0
+-Support the Podesta
+	>Law and Order Restored>0
+-Ignore them
+END
+START
+Event
+A Foreign Friend
+You are able to convince the podesta that the foreign merchant is not in violation of the statute. The
+merchant introduces himself as hailing from Lübeck, having made an extremely long journey to sell his
+Hanseatic products to far away markets before getting caught up in all these frivolous statutes. As
+a token of appreciation, he offers you some of his stock!
+-Thanks, friend! (+50 Amber)
+	6Wares + 50
+END
+START
+Event
+Law and Order Restored
+The combined forces of you and the Podesta intimidate the merchant and he flees. You are really not
+invested enough to care about chasing after him, but nonetheless the Podesta surely appreciated your
+assistance, which must help your reputation in this city.
+-Serves him right for not looking up the arbitrary and contradictory statutes of every city he does business in! (+20 Reputation)
+	SRep = 20
+END
+START
+RandomEvent
+An Unfortunate Ink-cident
+While taking inventory of your bills of exchange, you have come to realize that one of them was folded before
+the ink could dry, leaving the entire letter an unreadable mess! Whatever value it had is as good as gone now.
+-You must remember to Think before you Ink.
+	IndCash - 200
+-I am in no way sorry for the above sentence. -David
+	IndCash - 200
+END
+START
+RandomEvent
+Death of a Debt
+News has reached you that someone who was indebted to you via a bill of exchange has died without any
+successors. The odds of you successfully cashing in this bill now are as good as zero.
+-I guess I won't be getting paid over his dead body.
+	IndCash - 200
+END
+START
+RandomEvent
+A Convenient Death
+News has reached you that someone who you were indebted to via a bill of exchange has died without any
+successors. That's effectively free money as far as you're concerned!
+-I can pay him back in Heaven.
+	IndCash + 200
+END
+START
+Event
+Debug
+Something went wrong! I tried to load an event that didn't exist. This event is a special
+debug event so that the game doesn't crash and you can continue playing, but this really shouldn't be
+here. Have exactly 1 Cash as my way of saying sorry.
+-Take the free money
+	Cash + 1
+END
+START
+RandomEvent
+An Emergency Need for Wine
+You encounter a panicked man who you recognize as a council member of the city. As it turns out, he was
+hosting a party, but one of his servants accidentally left the stock of wine uncovered for days and
+spoiled it. He implores you to sell him some wine, claiming that he needs at least 50 but would prefer
+as much as 200 "units" of wine and will pay far above market price. You decide that now is not the time
+to pester him over what exactly a "unit" of wine is, and are confident that whoever needed to understand
+that terminology understood it. Helping a council member like this will surely reflect nicely on you...
+-Sell the host 50 wine for 200 cash. (+5 Rep)
+	#4Wares > 49
+	4Wares - 50
+	Cash + 200
+	SRep + 5
+-Give the host 50 wine as a gesture of goodwill. (+15 Rep)
+	#4Wares > 49
+	4Wares - 50
+	SRep + 15
+-Sell the host 100 wine for 400 cash. (+10 Rep)
+	#4Wares > 99
+	4Wares - 100
+	Cash + 400
+	SRep + 10
+-Give the host 100 wine as a gesture of goodwill. (+30 Rep)
+	#4Wares > 99
+	4Wares - 100
+	SRep + 30
+-Sell the host 200 wine for 800 cash. (+20 Rep)
+	#4Wares > 199
+	4Wares - 200
+	Cash + 800
+	SRep + 20
+-Give the host 200 wine as a gesture of goodwill. (+60 Rep)
+	#4Wares > 199
+	4Wares - 200
+	SRep + 60
+-Apologize and move on.
+END
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+These last two events are manually placed into the game by the code, giving you a 5 year warning to the end of the simulation
+and the final event of the simulation itself.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+START
+Event
+A Deadly Premonition
+Something feels very ominious as you stand in the market today. You feel that if you have anything left to
+do in your career, you should find time for it in the next 5 years.
+-Duly noted.
+END
+START
+Event
+Death of a Salesman
+The year is 1348, and illness beyond anything ever seen before has struck. Staying in one place seems like
+the safest bet, but as a merchant doing so is almost impossible. You look back at your accomplishments in the
+last 48 years, and reminisce on your successful career before you set sail for the last time.
+-I hope the Church was right and I can buy my way into heaven!
+END

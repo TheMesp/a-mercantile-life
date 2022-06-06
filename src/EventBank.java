@@ -14,7 +14,7 @@ public class EventBank {
         this.gameManager = gameManager;
         eventTable = new Hashtable<String, Event>(100);
         eventNames = null;
-        loadEvents("events.txt");
+        loadEvents("../events/events.txt");
     }
     //Loads the events from a file.
     private void loadEvents(String filepath){
