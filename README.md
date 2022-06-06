@@ -1,2 +1,2 @@
 # a-mercantile-life
-Award-winning HIST3170 project simulating a merchant in medieval Italy.
+Award-winning HIST3138 project simulating a merchant in medieval Italy.
